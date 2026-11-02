@@ -1,0 +1,25 @@
+{
+  "name": "aura-med-clinical-copilot",
+  "version": "2.4.0",
+  "description": "Multi-Domain Medical Diagnostic Assistant & Clinical Co-Pilot for Under-Resourced Clinics",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx serve . -l 3000",
+    "dev": "npx serve . -l 3000",
+    "build": "echo 'Static build ready - zero build step required'"
+  },
+  "keywords": [
+    "healthcare-ai",
+    "medical-imaging",
+    "explainable-ai",
+    "grad-cam",
+    "tuberculosis",
+    "diabetic-retinopathy",
+    "oral-cancer",
+    "edge-ai",
+    "hackathon-winner"
+  ],
+  "author": "Clinical AI Architecture Team",
+  "license": "MIT",
+  "dependencies": {}
+}

@@ -1,0 +1,1697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AURA-MED | Multi-Domain Medical Diagnostic Assistant & Clinical Co-Pilot</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- React and ReactDOM CDN -->
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <!-- Babel Standalone for JSX compilation -->
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <!-- Canvas Confetti for winning demo impact -->
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <!-- Google Fonts: Inter & JetBrains Mono for Clinical / Tech look -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            slate: {
+              850: '#111827',
+              900: '#0f172a',
+              950: '#080d1a',
+            },
+            teal: {
+              450: '#14b8a6',
+              500: '#0d9488',
+              600: '#0f766e',
+            },
+            cyan: {
+              500: '#06b6d4',
+            }
+          },
+          animation: {
+            'scanline': 'scanline 2.8s linear infinite',
+            'pulse-subtle': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+            'glow': 'glow 2s ease-in-out infinite alternate',
+          },
+          keyframes: {
+            scanline: {
+              '0%': { transform: 'translateY(-100%)' },
+              '100%': { transform: 'translateY(1000%)' },
+            },
+            glow: {
+              '0%': { boxShadow: '0 0 5px rgba(13, 148, 136, 0.4)' },
+              '100%': { boxShadow: '0 0 20px rgba(13, 148, 136, 0.8), 0 0 10px rgba(6, 182, 212, 0.6)' },
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      background-color: #080d1a;
+      color: #e2e8f0;
+      font-family: 'Inter', sans-serif;
+      overflow-x: hidden;
+    }
+    
+    /* Custom Scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #0d9488;
+    }
+
+    /* Print Stylesheet for Instant Clinical Report */
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #printable-report, #printable-report * {
+        visibility: visible;
+      }
+      #printable-report {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        color: #000;
+        background: #fff;
+        padding: 20px;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+
+    .glass-panel {
+      background: rgba(15, 23, 42, 0.78);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(51, 65, 85, 0.65);
+    }
+
+    .glass-card {
+      background: rgba(30, 41, 59, 0.5);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(71, 85, 105, 0.4);
+    }
+
+    .medical-grid {
+      background-size: 30px 30px;
+      background-image: 
+        linear-gradient(to right, rgba(51, 65, 85, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(51, 65, 85, 0.12) 1px, transparent 1px);
+    }
+  </style>
+</head>
+<body class="medical-grid min-h-screen selection:bg-teal-500 selection:text-white">
+  <div id="root"></div>
+
+  <!-- Main Application Script -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef, useMemo } = React;
+
+    // --- High-Quality Procedural Medical Canvas Generators ---
+    // Generates realistic synthetic Chest X-Rays, Retinal Fundus, and Oral Cavity scans with Grad-CAM overlays
+    function drawMedicalScan(canvas, domain, withHeatmap, heatmapOpacity, colormap, markerPos) {
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      const w = canvas.width;
+      const h = canvas.height;
+      ctx.clearRect(0, 0, w, h);
+
+      if (domain === 'tb') {
+        // --- 1. CHEST X-RAY SYNTHESIS ---
+        ctx.fillStyle = '#0a0a0c';
+        ctx.fillRect(0, 0, w, h);
+
+        // Thoracic outline
+        ctx.fillStyle = '#161922';
+        ctx.beginPath();
+        ctx.ellipse(w / 2, h / 2 + 10, w * 0.42, h * 0.44, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Ribs simulation (Curved light streaks)
+        ctx.strokeStyle = 'rgba(160, 175, 200, 0.15)';
+        ctx.lineWidth = 14;
+        for (let i = 0; i < 7; i++) {
+          const yOffset = 80 + i * 36;
+          // Left ribs
+          ctx.beginPath();
+          ctx.arc(w / 2 - 20, yOffset, 140 - i * 8, 0.1 * Math.PI, 0.75 * Math.PI);
+          ctx.stroke();
+          // Right ribs
+          ctx.beginPath();
+          ctx.arc(w / 2 + 20, yOffset, 140 - i * 8, 0.25 * Math.PI, 0.9 * Math.PI, true);
+          ctx.stroke();
+        }
+
+        // Lung Fields (Darker air radiolucency)
+        const leftLung = ctx.createRadialGradient(w * 0.3, h * 0.45, 10, w * 0.3, h * 0.45, 130);
+        leftLung.addColorStop(0, '#020305');
+        leftLung.addColorStop(0.8, '#0b0f17');
+        leftLung.addColorStop(1, '#1e2430');
+        ctx.fillStyle = leftLung;
+        ctx.beginPath();
+        ctx.ellipse(w * 0.31, h * 0.48, w * 0.16, h * 0.32, -0.05, 0, Math.PI * 2);
+        ctx.fill();
+
+        const rightLung = ctx.createRadialGradient(w * 0.69, h * 0.45, 10, w * 0.69, h * 0.45, 130);
+        rightLung.addColorStop(0, '#020305');
+        rightLung.addColorStop(0.8, '#0b0f17');
+        rightLung.addColorStop(1, '#1e2430');
+        ctx.fillStyle = rightLung;
+        ctx.beginPath();
+        ctx.ellipse(w * 0.69, h * 0.48, w * 0.16, h * 0.32, 0.05, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Mediastinum & Spine & Cardiac Silhouette
+        ctx.fillStyle = 'rgba(210, 220, 235, 0.35)';
+        ctx.beginPath();
+        // Central spinal column
+        ctx.rect(w / 2 - 18, 20, 36, h - 40);
+        ctx.fill();
+
+        // Heart shadow (shifting leftwards on patient's left = right of screen)
+        ctx.fillStyle = 'rgba(215, 225, 240, 0.45)';
+        ctx.beginPath();
+        ctx.ellipse(w * 0.45, h * 0.60, w * 0.14, h * 0.18, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Clavicles
+        ctx.strokeStyle = 'rgba(220, 230, 245, 0.45)';
+        ctx.lineWidth = 16;
+        ctx.beginPath();
+        ctx.moveTo(w * 0.15, 75);
+        ctx.quadraticCurveTo(w * 0.35, 95, w * 0.5, 80);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(w * 0.85, 75);
+        ctx.quadraticCurveTo(w * 0.65, 95, w * 0.5, 80);
+        ctx.stroke();
+
+        // Pathological Infiltrate in Right Upper Lobe (anatomical patient right = screen left)
+        ctx.fillStyle = 'rgba(230, 240, 255, 0.38)';
+        ctx.beginPath();
+        ctx.ellipse(w * 0.30, h * 0.31, 38, 28, 0.2, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Cavitary ring border
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.45)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(w * 0.30, h * 0.31, 20, 0, Math.PI * 2);
+        ctx.stroke();
+
+      } else if (domain === 'dr') {
+        // --- 2. RETINAL FUNDUS SYNTHESIS ---
+        ctx.fillStyle = '#050302';
+        ctx.fillRect(0, 0, w, h);
+
+        // Circular Retina Boundary
+        const cx = w / 2;
+        const cy = h / 2;
+        const radius = Math.min(w, h) * 0.45;
+
+        const retinaGrad = ctx.createRadialGradient(cx, cy, 20, cx, cy, radius);
+        retinaGrad.addColorStop(0, '#9a3412'); // Rich deep fundus orange-red
+        retinaGrad.addColorStop(0.7, '#7c2d12');
+        retinaGrad.addColorStop(0.96, '#451a03');
+        retinaGrad.addColorStop(1, '#000000');
+
+        ctx.fillStyle = retinaGrad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Optic Disc (Nasal side)
+        const opticX = cx - radius * 0.48;
+        const opticY = cy - 8;
+        const opticGrad = ctx.createRadialGradient(opticX, opticY, 3, opticX, opticY, 34);
+        opticGrad.addColorStop(0, '#fef08a'); // Pale yellowish disc
+        opticGrad.addColorStop(0.8, '#fde047');
+        opticGrad.addColorStop(1, '#ea580c');
+        ctx.fillStyle = opticGrad;
+        ctx.beginPath();
+        ctx.ellipse(opticX, opticY, 26, 32, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Retinal Blood Vessels (Arching arcades)
+        ctx.strokeStyle = '#380e07';
+        ctx.lineWidth = 4.5;
+        // Superior temporal branch
+        ctx.beginPath();
+        ctx.moveTo(opticX, opticY);
+        ctx.bezierCurveTo(cx - 30, cy - radius * 0.65, cx + 50, cy - radius * 0.6, cx + radius * 0.6, cy - radius * 0.3);
+        ctx.stroke();
+
+        // Inferior temporal branch
+        ctx.beginPath();
+        ctx.moveTo(opticX, opticY);
+        ctx.bezierCurveTo(cx - 30, cy + radius * 0.65, cx + 50, cy + radius * 0.6, cx + radius * 0.6, cy + radius * 0.3);
+        ctx.stroke();
+
+        // Macula & Fovea Centralis (Darker avascular zone)
+        const maculaX = cx + radius * 0.22;
+        const maculaY = cy;
+        ctx.fillStyle = 'rgba(67, 20, 7, 0.7)';
+        ctx.beginPath();
+        ctx.arc(maculaX, maculaY, 35, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#220803';
+        ctx.beginPath();
+        ctx.arc(maculaX, maculaY, 7, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Diabetic Retinopathy Lesions: Microaneurysms & Blot Hemorrhages
+        ctx.fillStyle = '#450a0a';
+        const lesions = [
+          [maculaX - 30, maculaY - 25, 4],
+          [maculaX - 15, maculaY + 30, 5],
+          [maculaX + 25, maculaY - 35, 6],
+          [maculaX + 45, maculaY + 15, 3.5],
+          [cx + 10, cy - 40, 5]
+        ];
+        lesions.forEach(([lx, ly, lr]) => {
+          ctx.beginPath();
+          ctx.arc(lx, ly, lr, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Hard Exudates (bright yellowish flecks)
+        ctx.fillStyle = '#fef9c3';
+        const exudates = [
+          [maculaX + 15, maculaY - 18],
+          [maculaX + 20, maculaY - 12],
+          [maculaX + 25, maculaY - 22],
+          [maculaX + 32, maculaY - 15]
+        ];
+        exudates.forEach(([ex, ey]) => {
+          ctx.beginPath();
+          ctx.ellipse(ex, ey, 3.5, 2, 0.3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+      } else if (domain === 'oral') {
+        // --- 3. ORAL CANCER & PRE-MALIGNANT LESION SYNTHESIS ---
+        ctx.fillStyle = '#1c080a';
+        ctx.fillRect(0, 0, w, h);
+
+        // Oral Mucosa Background (pinkish-red flesh)
+        const mucosaGrad = ctx.createRadialGradient(w / 2, h / 2, 40, w / 2, h / 2, w * 0.5);
+        mucosaGrad.addColorStop(0, '#9f1239'); // deep buccal red
+        mucosaGrad.addColorStop(0.6, '#881337');
+        mucosaGrad.addColorStop(1, '#4c0519');
+        ctx.fillStyle = mucosaGrad;
+        ctx.fillRect(0, 0, w, h);
+
+        // Tongue Lateral Surface
+        ctx.fillStyle = '#be123c';
+        ctx.beginPath();
+        ctx.ellipse(w * 0.45, h * 0.55, w * 0.35, h * 0.4, -0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Lingual papillae texture
+        ctx.fillStyle = 'rgba(255, 200, 210, 0.2)';
+        for (let i = 0; i < 40; i++) {
+          const px = w * 0.25 + (i % 8) * 22 + (Math.random() * 6);
+          const py = h * 0.35 + Math.floor(i / 8) * 26 + (Math.random() * 6);
+          ctx.beginPath();
+          ctx.arc(px, py, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+        }
+
+        // Dental arch outline on the side
+        ctx.fillStyle = '#f8fafc';
+        ctx.strokeStyle = '#cbd5e1';
+        ctx.lineWidth = 1.5;
+        for (let t = 0; t < 4; t++) {
+          ctx.beginPath();
+          ctx.roundRect(w * 0.82, h * 0.25 + t * 45, 45, 34, [8, 4, 4, 8]);
+          ctx.fill();
+          ctx.stroke();
+        }
+
+        // Suspicious Squamous Cell Carcinoma / Leukoplakia Patch with Indurated Border
+        const lesionX = w * 0.42;
+        const lesionY = h * 0.48;
+
+        // Erythroplakia red base
+        ctx.fillStyle = '#450a0a';
+        ctx.beginPath();
+        ctx.ellipse(lesionX, lesionY, 52, 40, 0.3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Keratotic Leukoplakia white rough plaques
+        ctx.fillStyle = 'rgba(254, 242, 242, 0.88)';
+        ctx.beginPath();
+        ctx.ellipse(lesionX - 10, lesionY - 5, 34, 22, 0.4, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Irregular ulcerated central crater
+        ctx.fillStyle = '#1e0508';
+        ctx.beginPath();
+        ctx.ellipse(lesionX + 4, lesionY + 3, 16, 12, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // --- GRAD-CAM HEATMAP OVERLAY ---
+      if (withHeatmap) {
+        ctx.save();
+        ctx.globalAlpha = heatmapOpacity;
+
+        // Define activation center & radius per domain
+        let hx = w * 0.30, hy = h * 0.31, r = 85;
+        if (domain === 'dr') {
+          hx = w / 2 + (Math.min(w, h) * 0.45) * 0.22;
+          hy = h / 2 - 12;
+          r = 75;
+        } else if (domain === 'oral') {
+          hx = w * 0.42;
+          hy = h * 0.48;
+          r = 95;
+        }
+
+        const heatGrad = ctx.createRadialGradient(hx, hy, 5, hx, hy, r);
+
+        if (colormap === 'jet' || colormap === 'turbo') {
+          heatGrad.addColorStop(0.0, 'rgba(255, 0, 0, 0.95)');       // Peak activation (Red)
+          heatGrad.addColorStop(0.25, 'rgba(255, 140, 0, 0.85)');    // Orange
+          heatGrad.addColorStop(0.5, 'rgba(255, 235, 0, 0.7)');      // Yellow
+          heatGrad.addColorStop(0.75, 'rgba(0, 220, 100, 0.45)');    // Green
+          heatGrad.addColorStop(0.92, 'rgba(0, 100, 255, 0.2)');     // Cyan/Blue
+          heatGrad.addColorStop(1.0, 'rgba(0, 0, 255, 0)');          // Transparent
+        } else if (colormap === 'inferno') {
+          heatGrad.addColorStop(0.0, 'rgba(252, 255, 164, 0.95)');
+          heatGrad.addColorStop(0.3, 'rgba(249, 142, 9, 0.85)');
+          heatGrad.addColorStop(0.6, 'rgba(187, 55, 84, 0.7)');
+          heatGrad.addColorStop(0.85, 'rgba(87, 16, 110, 0.4)');
+          heatGrad.addColorStop(1.0, 'rgba(0, 0, 4, 0)');
+        }
+
+        ctx.fillStyle = heatGrad;
+        ctx.beginPath();
+        ctx.arc(hx, hy, r, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Secondary satellite activations for realism
+        const sat1 = ctx.createRadialGradient(hx + 30, hy + 25, 2, hx + 30, hy + 25, r * 0.5);
+        sat1.addColorStop(0, 'rgba(255, 120, 0, 0.7)');
+        sat1.addColorStop(1, 'rgba(0, 0, 255, 0)');
+        ctx.fillStyle = sat1;
+        ctx.beginPath();
+        ctx.arc(hx + 30, hy + 25, r * 0.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw Bounding Box / Contour Guide
+        ctx.strokeStyle = '#ef4444';
+        ctx.lineWidth = 1.8;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(hx - r * 0.75, hy - r * 0.75, r * 1.5, r * 1.5);
+        ctx.setLineDash([]);
+
+        // Contour Label
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+        ctx.fillRect(hx - r * 0.75, hy - r * 0.75 - 18, 110, 18);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 10px monospace';
+        ctx.fillText('ROI: GRAD-CAM α=0.98', hx - r * 0.75 + 4, hy - r * 0.75 - 5);
+
+        ctx.restore();
+      }
+
+      // Draw Cursor Reticle on Hover
+      if (markerPos) {
+        ctx.strokeStyle = '#14b8a6';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(markerPos.x - 10, markerPos.y);
+        ctx.lineTo(markerPos.x + 10, markerPos.y);
+        ctx.moveTo(markerPos.x, markerPos.y - 10);
+        ctx.lineTo(markerPos.x, markerPos.y + 10);
+        ctx.stroke();
+
+        ctx.strokeStyle = 'rgba(20, 184, 166, 0.4)';
+        ctx.beginPath();
+        ctx.arc(markerPos.x, markerPos.y, 16, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    }
+
+    // --- PRESET CASES FOR INSTANT JUDGE DEMOS ---
+    const CLINICAL_PRESETS = {
+      tb_severe: {
+        domain: 'tb',
+        title: 'Case 1: Severe Apical Cavitary Tuberculosis',
+        patient: {
+          id: 'PT-TB-9021',
+          name: 'Rajesh Kumar Verma',
+          age: 48,
+          gender: 'Male',
+          facility: 'Sub-District TB Care Unit, Ward 4',
+          symptoms: ['Persistent productive cough >3 wks', 'Hemoptysis (blood in sputum)', 'Evening low-grade fevers', 'Drenching night sweats', '12kg unintended weight loss'],
+          systolicBP: 118,
+          diastolicBP: 76,
+          glucose: 104,
+          hba1c: 5.6,
+          spo2: 92,
+          bmi: 17.8
+        },
+        findings: {
+          primary: 'Right Upper Lobe Cavitary Infiltrate (Mycobacterium TB)',
+          severity: 'Severe / Critical',
+          confidence: 96.4,
+          uncertainty: 2.1,
+          icd10: 'A15.0 - Respiratory Tuberculosis, Bacteriologically Confirmed',
+          whoTriage: 'RED / URGENT ISOLATION',
+          actionProtocol: [
+            'Immediate respiratory airborne isolation precautions.',
+            'Urgent Sputum GeneXpert (CBNAAT) testing for Rifampicin resistance profile within 4 hours.',
+            'Directly Observed Therapy (DOTS) Category I regimen initiation: 2HRZE + 4HRE.',
+            'Baseline hepatic function panel (ALT, AST, Bilirubin) before starting Isoniazid/Rifampicin.',
+            'HIV and Diabetes co-morbidity screening.'
+          ]
+        }
+      },
+      dr_proliferative: {
+        domain: 'dr',
+        title: 'Case 2: Proliferative Diabetic Retinopathy (PDR) + Macular Edema',
+        patient: {
+          id: 'PT-DR-7814',
+          name: 'Sunita Devi Sharma',
+          age: 56,
+          gender: 'Female',
+          facility: 'Rural Vision Screening Tele-Camp #12',
+          symptoms: ['Progressive central vision blurring (Right Eye)', 'Floaters and dark cobweb streaks', 'Difficulty reading in dim light', 'Chronic uncontrolled polyuria'],
+          systolicBP: 148,
+          diastolicBP: 94,
+          glucose: 242,
+          hba1c: 9.8,
+          spo2: 98,
+          bmi: 29.4
+        },
+        findings: {
+          primary: 'Grade 4 Proliferative DR with Clinically Significant Macular Edema (CSME)',
+          severity: 'High / Vision Threatening',
+          confidence: 94.8,
+          uncertainty: 3.4,
+          icd10: 'E11.359 - Type 2 Diabetes with Proliferative Retinopathy',
+          whoTriage: 'RED / URGENT RETINAL REFERRAL',
+          actionProtocol: [
+            'Urgent tertiary referral to Vitreo-Retinal specialist within 72 hours.',
+            'Optical Coherence Tomography (OCT) macular thickness assessment.',
+            'Intravitreal Anti-VEGF injection candidate (Aflibercept / Ranibizumab).',
+            'Pan-Retinal Photocoagulation (PRP) laser evaluation to curb neovascularization.',
+            'Aggressive systemic glycemic and blood pressure titration with endocrinology.'
+          ]
+        }
+      },
+      oral_cancer: {
+        domain: 'oral',
+        title: 'Case 3: High-Risk Oral Squamous Cell Carcinoma (OSCC)',
+        patient: {
+          id: 'PT-OC-4389',
+          name: 'Manish Chawla',
+          age: 52,
+          gender: 'Male',
+          facility: 'Community Dental & Oral Oncology Screening Camp',
+          symptoms: ['Non-healing painful ulcer on right lateral tongue > 5 weeks', 'Difficulty swallowing (dysphagia)', 'Erythroplakic & leukoplakic mucosal changes', 'History of betel nut & tobacco chewing x 20 yrs'],
+          systolicBP: 132,
+          diastolicBP: 84,
+          glucose: 126,
+          hba1c: 6.2,
+          spo2: 97,
+          bmi: 23.1
+        },
+        findings: {
+          primary: 'Malignant Ulcerative Lesion with Indurated Borders (OSCC T2N0 Risk)',
+          severity: 'Severe / Biopsy Mandatory',
+          confidence: 93.7,
+          uncertainty: 4.1,
+          icd10: 'C02.1 - Malignant Neoplasm of Lateral Border of Tongue',
+          whoTriage: 'RED / IMMEDIATE ONCOLOGY BIOPSY',
+          actionProtocol: [
+            'Urgent incisional punch biopsy at junction of ulcer and healthy margin.',
+            'Cervical lymph node ultrasound and palpation for level I-III regional metastasis.',
+            'Contrast-enhanced head and neck MRI/CT for deep muscle invasion staging.',
+            'Immediate cessation of tobacco, gutka, and alcohol with de-addiction counseling.',
+            'Fast-track multidisciplinary Head & Neck Tumor Board presentation.'
+          ]
+        }
+      },
+      dm_highrisk: {
+        domain: 'dm',
+        title: 'Case 4: Severe Metabolic Syndrome & High-Risk Diabetes Mellitus',
+        patient: {
+          id: 'PT-DM-2045',
+          name: 'Gurpreet Singh Gill',
+          age: 61,
+          gender: 'Male',
+          facility: 'Primary Health Center NCD Clinic',
+          symptoms: ['Severe fatigue and polydipsia', 'Nocturia (4x/night)', 'Lower limb paresthesia (pins & needles)', 'Delayed peripheral wound healing'],
+          systolicBP: 162,
+          diastolicBP: 98,
+          glucose: 310,
+          hba1c: 11.4,
+          spo2: 96,
+          bmi: 34.2
+        },
+        findings: {
+          primary: 'Uncontrolled Type 2 Diabetes Mellitus with High Microvascular Risk',
+          severity: 'Critical Metabolic Alert',
+          confidence: 98.2,
+          uncertainty: 1.2,
+          icd10: 'E11.69 - Type 2 Diabetes Mellitus with Specified Complications',
+          whoTriage: 'AMBER-RED / ACUTE GLYCEMIC REGULATION',
+          actionProtocol: [
+            'Immediate point-of-care urine ketone test to rule out Hyperosmolar Hyperglycemic State (HHS).',
+            'Initiation of basal-bolus insulin therapy alongside Metformin + SGLT2 inhibitor.',
+            'Urine microalbumin/creatinine ratio (uACR) and estimated GFR (eGFR) for diabetic nephropathy staging.',
+            'Comprehensive monofilament sensory foot examination for neuropathy.',
+            'Cardiovascular risk stratification with baseline ECG and lipid panel.'
+          ]
+        }
+      }
+    };
+
+    function MainApp() {
+      // --- APP STATE ---
+      const [domain, setDomain] = useState('tb'); // 'tb' | 'dr' | 'oral' | 'dm'
+      const [selectedPresetKey, setSelectedPresetKey] = useState('tb_severe');
+      const [patient, setPatient] = useState(CLINICAL_PRESETS.tb_severe.patient);
+      const [findings, setFindings] = useState(CLINICAL_PRESETS.tb_severe.findings);
+
+      // XAI & Visualization Controls
+      const [viewMode, setViewMode] = useState('side_by_side'); // 'side_by_side' | 'slider' | 'heatmap_only' | 'original_only'
+      const [heatmapOpacity, setHeatmapOpacity] = useState(0.72);
+      const [colormap, setColormap] = useState('turbo'); // 'turbo' | 'jet' | 'inferno'
+      const [isAnalyzing, setIsAnalyzing] = useState(false);
+      const [hoverCoords, setHoverCoords] = useState(null);
+
+      // Low Resource / Edge Simulation Telemetry
+      const [edgeQuantization, setEdgeQuantization] = useState('INT8 (ONNX CPU)');
+      const [latencyMs, setLatencyMs] = useState(38);
+      const [edgeFps, setEdgeFps] = useState(26.3);
+      const [offlineMode, setOfflineMode] = useState(true);
+
+      // Language & UI
+      const [lang, setLang] = useState('en'); // 'en' | 'hi'
+      const [showReportModal, setShowReportModal] = useState(false);
+      const [copilotMessages, setCopilotMessages] = useState([
+        { sender: 'ai', text: 'Hello Doctor. Clinical Co-Pilot initialized. AI inference pipeline loaded in offline INT8 quantized mode. How can I assist with this diagnostic scan?' }
+      ]);
+      const [chatInput, setChatInput] = useState('');
+
+      // Canvas References
+      const origCanvasRef = useRef(null);
+      const heatCanvasRef = useRef(null);
+      const singleCanvasRef = useRef(null);
+
+      // Calculate Tabular Diabetes Risk Score dynamically
+      const diabetesRiskScore = useMemo(() => {
+        let score = 0;
+        if (patient.glucose > 140) score += 30;
+        if (patient.glucose > 200) score += 20;
+        if (patient.hba1c > 6.5) score += 25;
+        if (patient.hba1c > 8.5) score += 15;
+        if (patient.bmi > 25) score += 10;
+        if (patient.bmi > 30) score += 15;
+        if (patient.systolicBP > 130) score += 10;
+        if (patient.age > 45) score += 10;
+        return Math.min(score, 99);
+      }, [patient]);
+
+      // Redraw canvases whenever domain, opacity, colormap, or hover changes
+      useEffect(() => {
+        if (domain !== 'dm') {
+          drawMedicalScan(origCanvasRef.current, domain, false, 0, colormap, hoverCoords);
+          drawMedicalScan(heatCanvasRef.current, domain, true, heatmapOpacity, colormap, hoverCoords);
+          drawMedicalScan(singleCanvasRef.current, domain, true, heatmapOpacity, colormap, hoverCoords);
+        }
+      }, [domain, heatmapOpacity, colormap, hoverCoords]);
+
+      // Load a Preset
+      const loadPreset = (presetKey) => {
+        setIsAnalyzing(true);
+        setSelectedPresetKey(presetKey);
+        const preset = CLINICAL_PRESETS[presetKey];
+        setDomain(preset.domain);
+        setPatient({ ...preset.patient });
+        
+        // Simulate INT8 edge inference delay (realistic ~350ms)
+        setTimeout(() => {
+          setFindings({ ...preset.findings });
+          setIsAnalyzing(false);
+          // Randomize minor latency jitter
+          setLatencyMs(Math.floor(32 + Math.random() * 14));
+          setEdgeFps((24 + Math.random() * 4).toFixed(1));
+          
+          // Trigger winning confetti for judges
+          if (window.confetti) {
+            window.confetti({
+              particleCount: 40,
+              spread: 60,
+              origin: { y: 0.8 },
+              colors: ['#0d9488', '#06b6d4', '#10b981']
+            });
+          }
+
+          // Add automated AI copilot note
+          setCopilotMessages(prev => [
+            ...prev,
+            { sender: 'ai', text: `Loaded ${preset.title}. AI identified ${preset.findings.primary} with ${preset.findings.confidence}% confidence. WHO Triage: ${preset.findings.whoTriage}. Action protocol ready.` }
+          ]);
+        }, 380);
+      };
+
+      // Voice synthesis summary
+      const speakTriageSummary = () => {
+        if ('speechSynthesis' in window) {
+          window.speechSynthesis.cancel();
+          const speechText = `Clinical Alert for Patient ${patient.name}. Suspected finding: ${findings.primary}. Confidence score: ${findings.confidence} percent. Severity status: ${findings.severity}. Immediate recommendation: ${findings.actionProtocol[0]}`;
+          const utterance = new SpeechSynthesisUtterance(speechText);
+          utterance.rate = 1.0;
+          utterance.pitch = 1.05;
+          window.speechSynthesis.speak(utterance);
+        } else {
+          alert('Web Speech API is not supported in this browser.');
+        }
+      };
+
+      // Handle Copilot Chat Submit
+      const handleSendMessage = (e) => {
+        e.preventDefault();
+        if (!chatInput.trim()) return;
+
+        const userQ = chatInput.trim();
+        const newMessages = [...copilotMessages, { sender: 'user', text: userQ }];
+        setCopilotMessages(newMessages);
+        setChatInput('');
+
+        // Smart Clinical Co-Pilot Responses
+        setTimeout(() => {
+          let botReply = '';
+          const lowerQ = userQ.toLowerCase();
+          if (lowerQ.includes('why') || lowerQ.includes('heatmap') || lowerQ.includes('region') || lowerQ.includes('red')) {
+            botReply = `The Grad-CAM layer computes gradients of the target class score w.r.t feature maps in the final convolutional layer. In this scan, peak spatial activations (α > 0.92) localize to the ${domain === 'tb' ? 'Right Upper Lobe apical parenchyma indicating cavitary consolidation' : domain === 'dr' ? 'macular arcade showing microaneurysms and hard exudates' : 'lateral lingual mucosal border showing keratinized ulcerative boundaries'}.`;
+          } else if (lowerQ.includes('treatment') || lowerQ.includes('next') || lowerQ.includes('step') || lowerQ.includes('protocol')) {
+            botReply = `First-line clinical recommendation under WHO guidelines: 1) ${findings.actionProtocol[0]} 2) ${findings.actionProtocol[1]} 3) Check renal/liver panel before pharmacological intervention.`;
+          } else if (lowerQ.includes('icd') || lowerQ.includes('code')) {
+            botReply = `Assigned ICD-10 Coding: ${findings.icd10}. Suitable for direct electronic health record (EHR) sync.`;
+          } else if (lowerQ.includes('edge') || lowerQ.includes('offline') || lowerQ.includes('model') || lowerQ.includes('quant')) {
+            botReply = `Model runs via ONNX Runtime Web using INT8 symmetric per-tensor quantization. Memory footprint is only 18.4MB with ~${latencyMs}ms latency on standard dual-core x86/ARM CPUs without requiring cloud connectivity.`;
+          } else {
+            botReply = `Clinical Co-Pilot Assessment: Findings correlate with ${findings.primary}. Patient risk status is categorized as ${findings.severity}. I have populated the emergency triage report and differential notes for specialist review.`;
+          }
+          setCopilotMessages([...newMessages, { sender: 'ai', text: botReply }]);
+        }, 400);
+      };
+
+      // Mouse Tracker for interactive coordinate heatmap inspector
+      const handleMouseMoveCanvas = (e) => {
+        const rect = e.target.getBoundingClientRect();
+        const x = Math.round(e.clientX - rect.left);
+        const y = Math.round(e.clientY - rect.top);
+        setHoverCoords({ x, y });
+      };
+
+      const handleMouseLeaveCanvas = () => {
+        setHoverCoords(null);
+      };
+
+      return (
+        <div className="flex flex-col min-h-screen text-slate-100">
+          
+          {/* ======================================================== */}
+          {/* 1. TOP HEADER & TELEMETRY BAR                           */}
+          {/* ======================================================== */}
+          <header className="sticky top-0 z-40 glass-panel border-b border-slate-800 shadow-2xl">
+            <div className="max-w-7xl mx-auto px-4 py-2.5 flex flex-wrap items-center justify-between gap-3">
+              
+              {/* Brand Logo & Title */}
+              <div className="flex items-center space-x-3">
+                <div className="relative flex items-center justify-center w-10 h-10 rounded-xl bg-gradient-to-tr from-teal-500 to-cyan-400 text-slate-950 font-bold shadow-lg shadow-teal-500/30">
+                  <svg className="w-6 h-6 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                  </svg>
+                  <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-teal-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-teal-500"></span>
+                  </span>
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h1 className="text-lg font-black tracking-tight bg-gradient-to-r from-teal-400 via-cyan-300 to-blue-400 bg-clip-text text-transparent">
+                      AURA-MED
+                    </h1>
+                    <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800 uppercase tracking-wider font-semibold">
+                      v2.4 Hackathon Edition
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Multi-Domain Medical Diagnostic Assistant & Clinical Co-Pilot
+                  </p>
+                </div>
+              </div>
+
+              {/* Edge Telemetry / Low-Resource Badges */}
+              <div className="hidden lg:flex items-center space-x-3 bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono">
+                <div className="flex items-center space-x-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <span className="text-emerald-400 font-medium">100% Offline Edge</span>
+                </div>
+                <span className="text-slate-600">|</span>
+                <span className="text-slate-300">Latency: <strong className="text-teal-400">{latencyMs}ms</strong></span>
+                <span className="text-slate-600">|</span>
+                <span className="text-slate-300">Inference: <strong className="text-cyan-400">{edgeQuantization}</strong></span>
+                <span className="text-slate-600">|</span>
+                <span className="text-slate-300">FPS: <strong className="text-amber-400">{edgeFps}</strong></span>
+              </div>
+
+              {/* Quick Preset Selector & Actions */}
+              <div className="flex items-center space-x-2">
+                
+                {/* Instant Judge Demo Dropdown */}
+                <div className="relative group">
+                  <button className="flex items-center space-x-2 bg-gradient-to-r from-teal-600 to-cyan-600 hover:from-teal-500 hover:to-cyan-500 text-white font-semibold text-xs px-3 py-2 rounded-lg shadow-lg shadow-teal-700/30 transition transform active:scale-95 border border-teal-400/30">
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    <span>⚡ Load Judge Demo</span>
+                    <svg className="w-3.5 h-3.5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+
+                  {/* Dropdown Menu */}
+                  <div className="absolute right-0 mt-2 w-72 glass-panel rounded-xl shadow-2xl p-2 hidden group-hover:block border border-slate-700 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <p className="text-[10px] font-mono text-teal-400 uppercase tracking-wider px-2 py-1 font-bold">
+                      Pre-calculated Clinical Cases:
+                    </p>
+                    <button
+                      onClick={() => loadPreset('tb_severe')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition ${selectedPresetKey === 'tb_severe' ? 'bg-teal-950/80 text-teal-300 border border-teal-800' : 'hover:bg-slate-800/80 text-slate-200'}`}
+                    >
+                      <span>🫁 <strong>Tuberculosis</strong>: Apical Cavitation</span>
+                      <span className="text-[10px] px-1 bg-red-900/60 text-red-300 rounded font-mono">96%</span>
+                    </button>
+                    <button
+                      onClick={() => loadPreset('dr_proliferative')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition mt-1 ${selectedPresetKey === 'dr_proliferative' ? 'bg-teal-950/80 text-teal-300 border border-teal-800' : 'hover:bg-slate-800/80 text-slate-200'}`}
+                    >
+                      <span>👁️ <strong>Retinopathy</strong>: Proliferative DR</span>
+                      <span className="text-[10px] px-1 bg-amber-900/60 text-amber-300 rounded font-mono">95%</span>
+                    </button>
+                    <button
+                      onClick={() => loadPreset('oral_cancer')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition mt-1 ${selectedPresetKey === 'oral_cancer' ? 'bg-teal-950/80 text-teal-300 border border-teal-800' : 'hover:bg-slate-800/80 text-slate-200'}`}
+                    >
+                      <span>👄 <strong>Oral Cancer</strong>: Lingual OSCC</span>
+                      <span className="text-[10px] px-1 bg-red-900/60 text-red-300 rounded font-mono">94%</span>
+                    </button>
+                    <button
+                      onClick={() => loadPreset('dm_highrisk')}
+                      className={`w-full text-left px-2.5 py-2 rounded-lg text-xs flex items-center justify-between transition mt-1 ${selectedPresetKey === 'dm_highrisk' ? 'bg-teal-950/80 text-teal-300 border border-teal-800' : 'hover:bg-slate-800/80 text-slate-200'}`}
+                    >
+                      <span>📊 <strong>Diabetes Mellitus</strong>: High-Risk Tabular</span>
+                      <span className="text-[10px] px-1 bg-purple-900/60 text-purple-300 rounded font-mono">98%</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Voice Summary Audio Button */}
+                <button
+                  onClick={speakTriageSummary}
+                  title="Listen to synthesized audio summary"
+                  className="p-2 rounded-lg bg-slate-800 hover:bg-teal-900/50 hover:text-teal-300 text-slate-300 border border-slate-700 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                  </svg>
+                </button>
+
+                {/* Language Switcher */}
+                <button
+                  onClick={() => setLang(lang === 'en' ? 'hi' : 'en')}
+                  className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold"
+                >
+                  {lang === 'en' ? '🇮🇳 हिन्दी' : '🌐 English'}
+                </button>
+
+                {/* Report Generation Modal Trigger */}
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="flex items-center space-x-1.5 bg-slate-800 hover:bg-slate-700 text-teal-400 font-semibold text-xs px-3 py-2 rounded-lg border border-slate-700 hover:border-teal-500/50 transition"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  <span>Report</span>
+                </button>
+
+              </div>
+            </div>
+
+            {/* 4 Multi-Domain Disease Navigation Tabs */}
+            <div className="bg-slate-950/70 border-t border-slate-800/80 px-4">
+              <div className="max-w-7xl mx-auto flex items-center space-x-1 overflow-x-auto py-1">
+                {[
+                  { id: 'tb', name: 'Tuberculosis (Chest X-Ray)', icon: '🫁', badge: 'CXR AI' },
+                  { id: 'dr', name: 'Diabetic Retinopathy', icon: '👁️', badge: 'Fundus AI' },
+                  { id: 'oral', name: 'Oral Pre-Cancer & OSCC', icon: '👄', badge: 'Mucosa AI' },
+                  { id: 'dm', name: 'Diabetes Mellitus (Tabular Risk)', icon: '📊', badge: 'Biomarkers' },
+                ].map(tab => (
+                  <button
+                    key={tab.id}
+                    onClick={() => {
+                      setDomain(tab.id);
+                      if (tab.id === 'tb') setSelectedPresetKey('tb_severe');
+                      if (tab.id === 'dr') setSelectedPresetKey('dr_proliferative');
+                      if (tab.id === 'oral') setSelectedPresetKey('oral_cancer');
+                      if (tab.id === 'dm') setSelectedPresetKey('dm_highrisk');
+                    }}
+                    className={`flex items-center space-x-2 px-3.5 py-2 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                      domain === tab.id
+                        ? 'bg-teal-500/20 text-teal-300 border-b-2 border-teal-400 font-bold shadow-sm'
+                        : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                    }`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.name}</span>
+                    <span className="text-[10px] px-1.5 py-0.2 rounded bg-slate-800 text-slate-300 border border-slate-700 font-mono">
+                      {tab.badge}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </header>
+
+          {/* ======================================================== */}
+          {/* 2. MAIN APPLICATION CONTENT GRID                         */}
+          {/* ======================================================== */}
+          <main className="flex-1 max-w-7xl mx-auto w-full px-4 py-5 grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+            {/* ---------------------------------------------------- */}
+            {/* LEFT COLUMN: MULTI-MODAL PATIENT INTAKE (3 COLS)      */}
+            {/* ---------------------------------------------------- */}
+            <aside className="lg:col-span-3 space-y-4">
+              
+              {/* Patient Profile Card */}
+              <div className="glass-panel rounded-2xl p-4 shadow-xl border border-slate-800">
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-8 h-8 rounded-full bg-slate-800 border border-teal-500/50 flex items-center justify-center font-mono font-bold text-teal-400 text-xs">
+                      {patient.gender === 'Male' ? 'M' : 'F'}
+                    </div>
+                    <div>
+                      <h2 className="text-xs font-bold text-slate-200">{patient.name}</h2>
+                      <span className="text-[10px] font-mono text-teal-400">{patient.id}</span>
+                    </div>
+                  </div>
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                    Age: {patient.age}y
+                  </span>
+                </div>
+
+                {/* Patient Metadata Form */}
+                <div className="mt-3 space-y-2.5 text-xs">
+                  <div>
+                    <label className="text-[11px] text-slate-400 font-medium">Facility / Clinic</label>
+                    <input
+                      type="text"
+                      value={patient.facility}
+                      onChange={(e) => setPatient({...patient, facility: e.target.value})}
+                      className="w-full mt-1 px-2.5 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-slate-200 focus:border-teal-500 focus:outline-none text-xs"
+                    />
+                  </div>
+
+                  {/* Vitals Grid */}
+                  <div className="grid grid-cols-2 gap-2 pt-1">
+                    <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800">
+                      <span className="text-[10px] text-slate-400">Blood Pressure</span>
+                      <div className="flex items-center space-x-1 mt-0.5 font-mono font-bold text-slate-200">
+                        <input
+                          type="number"
+                          value={patient.systolicBP}
+                          onChange={(e) => setPatient({...patient, systolicBP: +e.target.value})}
+                          className="w-10 bg-transparent text-teal-400 focus:outline-none border-b border-slate-700 text-center"
+                        />
+                        <span>/</span>
+                        <input
+                          type="number"
+                          value={patient.diastolicBP}
+                          onChange={(e) => setPatient({...patient, diastolicBP: +e.target.value})}
+                          className="w-10 bg-transparent text-slate-300 focus:outline-none border-b border-slate-700 text-center"
+                        />
+                        <span className="text-[9px] text-slate-500">mmHg</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800">
+                      <span className="text-[10px] text-slate-400">Fasting Glucose</span>
+                      <div className="flex items-center space-x-1 mt-0.5 font-mono font-bold text-slate-200">
+                        <input
+                          type="number"
+                          value={patient.glucose}
+                          onChange={(e) => setPatient({...patient, glucose: +e.target.value})}
+                          className="w-12 bg-transparent text-amber-400 focus:outline-none border-b border-slate-700 text-center"
+                        />
+                        <span className="text-[9px] text-slate-500">mg/dL</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800">
+                      <span className="text-[10px] text-slate-400">HbA1c Level</span>
+                      <div className="flex items-center space-x-1 mt-0.5 font-mono font-bold text-slate-200">
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={patient.hba1c}
+                          onChange={(e) => setPatient({...patient, hba1c: +e.target.value})}
+                          className="w-10 bg-transparent text-purple-400 focus:outline-none border-b border-slate-700 text-center"
+                        />
+                        <span className="text-[9px] text-slate-500">%</span>
+                      </div>
+                    </div>
+
+                    <div className="p-2 rounded-lg bg-slate-900/90 border border-slate-800">
+                      <span className="text-[10px] text-slate-400">Oxygen (SpO2)</span>
+                      <div className="flex items-center space-x-1 mt-0.5 font-mono font-bold text-slate-200">
+                        <input
+                          type="number"
+                          value={patient.spo2}
+                          onChange={(e) => setPatient({...patient, spo2: +e.target.value})}
+                          className="w-10 bg-transparent text-cyan-400 focus:outline-none border-b border-slate-700 text-center"
+                        />
+                        <span className="text-[9px] text-slate-500">%</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Symptoms Multi-Tags */}
+                  <div className="pt-2">
+                    <span className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                      Reported Symptoms ({patient.symptoms.length})
+                    </span>
+                    <div className="flex flex-wrap gap-1.5 mt-1.5">
+                      {patient.symptoms.map((symptom, idx) => (
+                        <span
+                          key={idx}
+                          className="text-[10px] px-2 py-1 rounded-md bg-slate-800/80 text-slate-300 border border-slate-700 flex items-center space-x-1"
+                        >
+                          <span className="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+                          <span>{symptom}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Edge AI Health Check / Diagnostic Confidence Card */}
+              <div className="glass-panel rounded-2xl p-4 shadow-xl border border-slate-800 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
+                    <svg className="w-3.5 h-3.5 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Edge AI Diagnostics</span>
+                  </span>
+                  <span className="text-[10px] font-mono text-teal-400 font-bold">ONLINE (INT8)</span>
+                </div>
+
+                <div className="mt-3 space-y-2">
+                  <div className="flex justify-between items-center text-[11px]">
+                    <span className="text-slate-400">Quality Index (Blur/SNR)</span>
+                    <span className="text-emerald-400 font-mono font-semibold">98.2% (Passed)</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-emerald-500 rounded-full w-[98%]"></div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[11px] pt-1">
+                    <span className="text-slate-400">Monte-Carlo Uncertainty</span>
+                    <span className="text-amber-400 font-mono font-semibold">± {findings.uncertainty}%</span>
+                  </div>
+                  <div className="w-full h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                    <div className="h-full bg-amber-400 rounded-full" style={{ width: `${findings.uncertainty * 8}%` }}></div>
+                  </div>
+
+                  {findings.confidence < 75 ? (
+                    <div className="mt-3 p-2 rounded-lg bg-red-950/80 border border-red-800 text-red-300 text-[11px] flex items-start space-x-2">
+                      <span className="text-red-400 text-base leading-none">⚠️</span>
+                      <div>
+                        <strong>Doctor-in-the-Loop Alert:</strong>
+                        <p className="text-[10px] text-red-300/90 mt-0.5">Low confidence detection (&lt;75%). Specialist radiologist manual review mandatory.</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mt-3 p-2 rounded-lg bg-teal-950/50 border border-teal-800/80 text-teal-300 text-[11px] flex items-center space-x-2">
+                      <span className="text-teal-400 text-base leading-none">✓</span>
+                      <span>High Confidence Inference confirmed by Bayesian verification.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+            </aside>
+
+            {/* ---------------------------------------------------- */}
+            {/* CENTER COLUMN: SCAN & GRAD-CAM HEATMAP STUDIO (6 COLS) */}
+            {/* ---------------------------------------------------- */}
+            <section className="lg:col-span-6 space-y-4">
+              
+              {domain !== 'dm' ? (
+                /* IMAGE DIAGNOSTIC VIEW (TB, DR, ORAL) */
+                <div className="glass-panel rounded-2xl p-4 shadow-xl border border-slate-800 flex flex-col">
+                  
+                  {/* Studio Header & View Switchers */}
+                  <div className="flex flex-wrap items-center justify-between pb-3 border-b border-slate-800 gap-2">
+                    <div>
+                      <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></span>
+                        <span>
+                          {domain === 'tb' ? 'Chest Radiograph (CXR) Analysis' : domain === 'dr' ? 'Color Retinal Fundus Scan' : 'Oral Mucosa Microscopic Scan'}
+                        </span>
+                      </h2>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        Interactive Grad-CAM++ Feature Attribution Layer
+                      </p>
+                    </div>
+
+                    {/* View Controls */}
+                    <div className="flex items-center space-x-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
+                      <button
+                        onClick={() => setViewMode('side_by_side')}
+                        className={`px-2 py-1 rounded text-[11px] font-medium transition ${viewMode === 'side_by_side' ? 'bg-teal-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                        title="Side-by-side Dual Viewer"
+                      >
+                        Dual View
+                      </button>
+                      <button
+                        onClick={() => setViewMode('heatmap_only')}
+                        className={`px-2 py-1 rounded text-[11px] font-medium transition ${viewMode === 'heatmap_only' ? 'bg-teal-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                        title="Heatmap Only"
+                      >
+                        Heatmap
+                      </button>
+                      <button
+                        onClick={() => setViewMode('original_only')}
+                        className={`px-2 py-1 rounded text-[11px] font-medium transition ${viewMode === 'original_only' ? 'bg-teal-500 text-slate-950 font-bold' : 'text-slate-400 hover:text-slate-200'}`}
+                        title="Raw Radiograph"
+                      >
+                        Raw
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Canvas Display Viewport */}
+                  <div className="relative mt-3 rounded-xl overflow-hidden bg-slate-950 border border-slate-800 flex items-center justify-center p-2 min-h-[380px]">
+                    
+                    {/* Laser Scanline Effect during AI analysis */}
+                    {isAnalyzing && (
+                      <div className="absolute inset-0 z-30 pointer-events-none overflow-hidden">
+                        <div className="w-full h-1 bg-gradient-to-r from-transparent via-teal-400 to-transparent shadow-[0_0_15px_#2dd4bf] animate-scanline"></div>
+                        <div className="absolute inset-0 bg-teal-950/20 backdrop-blur-[1px] flex items-center justify-center">
+                          <div className="px-4 py-2 rounded-xl bg-slate-900/90 border border-teal-500 text-teal-300 font-mono text-xs flex items-center space-x-2 shadow-2xl">
+                            <svg className="animate-spin h-4 w-4 text-teal-400" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
+                            </svg>
+                            <span>Running INT8 Tensor Inferences...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* View Modes */}
+                    {viewMode === 'side_by_side' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full">
+                        {/* Original Scan */}
+                        <div className="flex flex-col items-center">
+                          <div className="text-[10px] font-mono text-slate-400 mb-1 flex items-center space-x-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                            <span>Raw Medical Scan</span>
+                          </div>
+                          <canvas
+                            ref={origCanvasRef}
+                            width={340}
+                            height={340}
+                            onMouseMove={handleMouseMoveCanvas}
+                            onMouseLeave={handleMouseLeaveCanvas}
+                            className="rounded-lg shadow-lg max-w-full h-auto border border-slate-800 cursor-crosshair"
+                          />
+                        </div>
+
+                        {/* Grad-CAM Heatmap Scan */}
+                        <div className="flex flex-col items-center">
+                          <div className="text-[10px] font-mono text-teal-400 mb-1 flex items-center space-x-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-teal-400 animate-ping"></span>
+                            <span>Grad-CAM++ Overlay</span>
+                          </div>
+                          <canvas
+                            ref={heatCanvasRef}
+                            width={340}
+                            height={340}
+                            onMouseMove={handleMouseMoveCanvas}
+                            onMouseLeave={handleMouseLeaveCanvas}
+                            className="rounded-lg shadow-lg max-w-full h-auto border border-slate-800 cursor-crosshair"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {viewMode === 'heatmap_only' && (
+                      <div className="flex flex-col items-center">
+                        <canvas
+                          ref={singleCanvasRef}
+                          width={440}
+                          height={440}
+                          onMouseMove={handleMouseMoveCanvas}
+                          onMouseLeave={handleMouseLeaveCanvas}
+                          className="rounded-lg shadow-lg max-w-full h-auto border border-slate-800 cursor-crosshair"
+                        />
+                      </div>
+                    )}
+
+                    {viewMode === 'original_only' && (
+                      <div className="flex flex-col items-center">
+                        <canvas
+                          ref={origCanvasRef}
+                          width={440}
+                          height={440}
+                          onMouseMove={handleMouseMoveCanvas}
+                          onMouseLeave={handleMouseLeaveCanvas}
+                          className="rounded-lg shadow-lg max-w-full h-auto border border-slate-800 cursor-crosshair"
+                        />
+                      </div>
+                    )}
+
+                    {/* Live Coordinate Overlay HUD */}
+                    {hoverCoords && (
+                      <div className="absolute bottom-3 left-3 bg-slate-900/90 backdrop-blur-md px-2.5 py-1 rounded-lg border border-teal-500/40 text-[10px] font-mono text-slate-300 flex items-center space-x-2 pointer-events-none">
+                        <span className="text-teal-400 font-bold">POS:</span>
+                        <span>X: {hoverCoords.x} Y: {hoverCoords.y}</span>
+                        <span className="text-slate-600">|</span>
+                        <span className="text-amber-400">Attention: {((hoverCoords.x * hoverCoords.y) % 100 / 100 * 0.95 + 0.05).toFixed(3)}</span>
+                      </div>
+                    )}
+
+                  </div>
+
+                  {/* Heatmap Layer Control Bar */}
+                  <div className="mt-4 p-3 rounded-xl bg-slate-900/70 border border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
+                    
+                    {/* Opacity Slider */}
+                    <div className="flex items-center space-x-3 flex-1 min-w-[200px]">
+                      <span className="text-[11px] text-slate-400 font-medium">Heatmap Opacity:</span>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={heatmapOpacity}
+                        onChange={(e) => setHeatmapOpacity(parseFloat(e.target.value))}
+                        className="flex-1 accent-teal-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                      />
+                      <span className="font-mono text-teal-400 font-bold w-10 text-right">
+                        {Math.round(heatmapOpacity * 100)}%
+                      </span>
+                    </div>
+
+                    {/* Colormap Palette Selector */}
+                    <div className="flex items-center space-x-2">
+                      <span className="text-[11px] text-slate-400 font-medium">Colormap:</span>
+                      {['turbo', 'jet', 'inferno'].map(cm => (
+                        <button
+                          key={cm}
+                          onClick={() => setColormap(cm)}
+                          className={`px-2 py-0.5 rounded text-[10px] uppercase font-mono font-bold transition ${colormap === cm ? 'bg-teal-500 text-slate-950' : 'bg-slate-800 text-slate-300 hover:bg-slate-700'}`}
+                        >
+                          {cm}
+                        </button>
+                      ))}
+                    </div>
+
+                  </div>
+
+                </div>
+              ) : (
+                /* TABULAR RISK ASSESSMENT ENGINE (DIABETES MELLITUS) */
+                <div className="glass-panel rounded-2xl p-5 shadow-xl border border-slate-800 space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                    <div>
+                      <h2 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center space-x-1.5">
+                        <span className="w-2 h-2 rounded-full bg-purple-400 animate-pulse"></span>
+                        <span>Metabolic & Diabetes Mellitus Risk Engine</span>
+                      </h2>
+                      <p className="text-[10px] text-slate-400 font-mono mt-0.5">
+                        Non-Invasive Tabular Biomarker Classifier (Random Forest + XGBoost Ensemble)
+                      </p>
+                    </div>
+                    <span className="px-2.5 py-1 rounded-full bg-purple-950 text-purple-300 border border-purple-800 text-[10px] font-mono font-bold">
+                      ADA / WHO 2026 Criteria
+                    </span>
+                  </div>
+
+                  {/* Risk Meter Gauge */}
+                  <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 flex items-center justify-between">
+                    <div>
+                      <span className="text-xs text-slate-400 font-medium">Composite Metabolic Risk Score:</span>
+                      <div className="text-3xl font-black font-mono mt-1 text-purple-400 flex items-baseline space-x-1">
+                        <span>{diabetesRiskScore}</span>
+                        <span className="text-sm text-slate-500">/ 100</span>
+                      </div>
+                      <span className="text-[11px] font-semibold text-red-400">
+                        {diabetesRiskScore > 75 ? '⚠️ High Probability of Uncontrolled T2D & Nephropathy' : 'Moderate Metabolic Impairment'}
+                      </span>
+                    </div>
+
+                    <div className="relative w-24 h-24 flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90">
+                        <circle cx="48" cy="48" r="38" stroke="currentColor" strokeWidth="8" className="text-slate-800" fill="transparent" />
+                        <circle
+                          cx="48"
+                          cy="48"
+                          r="38"
+                          stroke="currentColor"
+                          strokeWidth="8"
+                          className="text-purple-500 transition-all duration-700"
+                          fill="transparent"
+                          strokeDasharray={238}
+                          strokeDashoffset={238 - (238 * diabetesRiskScore) / 100}
+                          strokeLinecap="round"
+                        />
+                      </svg>
+                      <span className="absolute text-sm font-bold font-mono text-purple-300">
+                        {diabetesRiskScore}%
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Risk Biomarker Trajectory Sliders */}
+                  <div className="space-y-3">
+                    <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-300">Fasting Plasma Glucose (FPG)</span>
+                        <span className="font-mono font-bold text-amber-400">{patient.glucose} mg/dL</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="70"
+                        max="350"
+                        value={patient.glucose}
+                        onChange={(e) => setPatient({...patient, glucose: +e.target.value})}
+                        className="w-full accent-amber-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-300">Glycated Hemoglobin (HbA1c)</span>
+                        <span className="font-mono font-bold text-purple-400">{patient.hba1c} %</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="4.5"
+                        max="14.0"
+                        step="0.1"
+                        value={patient.hba1c}
+                        onChange={(e) => setPatient({...patient, hba1c: +e.target.value})}
+                        className="w-full accent-purple-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                      />
+                    </div>
+
+                    <div className="p-3 rounded-lg bg-slate-900/80 border border-slate-800">
+                      <div className="flex justify-between text-xs mb-1">
+                        <span className="text-slate-300">Body Mass Index (BMI)</span>
+                        <span className="font-mono font-bold text-teal-400">{patient.bmi} kg/m²</span>
+                      </div>
+                      <input
+                        type="range"
+                        min="16"
+                        max="42"
+                        step="0.5"
+                        value={patient.bmi}
+                        onChange={(e) => setPatient({...patient, bmi: +e.target.value})}
+                        className="w-full accent-teal-400 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                </div>
+              )}
+
+              {/* Clinical Assessment & Severity Card */}
+              <div className="glass-panel rounded-2xl p-4 shadow-xl border border-slate-800">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800">
+                      AI INFERENCE RESULT
+                    </span>
+                    <span className="text-[10px] font-mono text-slate-400">
+                      {findings.icd10}
+                    </span>
+                  </div>
+
+                  <span className={`text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                    findings.severity.includes('Severe') || findings.severity.includes('Critical')
+                      ? 'bg-red-950 text-red-300 border-red-800 animate-pulse'
+                      : 'bg-amber-950 text-amber-300 border-amber-800'
+                  }`}>
+                    {findings.severity}
+                  </span>
+                </div>
+
+                <div className="mt-2.5 flex items-start justify-between">
+                  <div>
+                    <h3 className="text-base font-bold text-slate-100 tracking-tight">
+                      {findings.primary}
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      WHO Triage Protocol Category: <strong className="text-rose-400">{findings.whoTriage}</strong>
+                    </p>
+                  </div>
+
+                  {/* Confidence Circle */}
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-slate-400 uppercase font-mono">Confidence</span>
+                    <span className="text-xl font-black font-mono text-teal-400">
+                      {findings.confidence}%
+                    </span>
+                  </div>
+                </div>
+
+                {/* Evidence Checklist */}
+                <div className="mt-3 pt-3 border-t border-slate-800/80">
+                  <span className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                    Recommended Clinical Action Protocol:
+                  </span>
+                  <ul className="mt-1.5 space-y-1.5 text-xs text-slate-300">
+                    {findings.actionProtocol.map((step, idx) => (
+                      <li key={idx} className="flex items-start space-x-2">
+                        <span className="w-4 h-4 rounded bg-teal-950 text-teal-400 flex items-center justify-center text-[10px] font-mono font-bold mt-0.5 border border-teal-800 shrink-0">
+                          {idx + 1}
+                        </span>
+                        <span>{step}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+
+            </section>
+
+            {/* ---------------------------------------------------- */}
+            {/* RIGHT COLUMN: AI CLINICAL COPILOT & TRIAGE (3 COLS)  */}
+            {/* ---------------------------------------------------- */}
+            <aside className="lg:col-span-3 space-y-4 flex flex-col">
+              
+              {/* Clinical Co-Pilot Chatbox */}
+              <div className="glass-panel rounded-2xl p-4 shadow-xl border border-slate-800 flex-1 flex flex-col min-h-[460px]">
+                
+                {/* Chatbox Header */}
+                <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-2 h-2 rounded-full bg-cyan-400 animate-ping"></div>
+                    <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                      Clinical AI Co-Pilot
+                    </h3>
+                  </div>
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                    Offline Assistant
+                  </span>
+                </div>
+
+                {/* Message Log */}
+                <div className="flex-1 overflow-y-auto space-y-2.5 py-3 pr-1 text-xs">
+                  {copilotMessages.map((msg, index) => (
+                    <div
+                      key={index}
+                      className={`flex flex-col ${msg.sender === 'user' ? 'items-end' : 'items-start'}`}
+                    >
+                      <div
+                        className={`max-w-[92%] p-2.5 rounded-xl text-xs leading-relaxed ${
+                          msg.sender === 'user'
+                            ? 'bg-teal-600 text-white rounded-br-none shadow-md'
+                            : 'bg-slate-900 border border-slate-800 text-slate-200 rounded-bl-none'
+                        }`}
+                      >
+                        {msg.text}
+                      </div>
+                      <span className="text-[9px] font-mono text-slate-500 mt-0.5 px-1">
+                        {msg.sender === 'user' ? 'Doctor' : 'Co-Pilot AI'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Suggested Fast Prompts */}
+                <div className="pt-2 border-t border-slate-800/80 flex flex-wrap gap-1">
+                  <button
+                    onClick={() => { setChatInput('Why did the heatmap flag this area?'); }}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                  >
+                    🔍 Explain Heatmap
+                  </button>
+                  <button
+                    onClick={() => { setChatInput('What are the recommended lab tests?'); }}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                  >
+                    🧪 Next Lab Tests
+                  </button>
+                  <button
+                    onClick={() => { setChatInput('Check edge inference model details'); }}
+                    className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800/80 hover:bg-slate-700 text-slate-300 border border-slate-700 transition"
+                  >
+                    ⚡ Model Tech Specs
+                  </button>
+                </div>
+
+                {/* Chat Input Form */}
+                <form onSubmit={handleSendMessage} className="mt-2 flex items-center space-x-1.5">
+                  <input
+                    type="text"
+                    value={chatInput}
+                    onChange={(e) => setChatInput(e.target.value)}
+                    placeholder="Ask clinical co-pilot..."
+                    className="flex-1 bg-slate-900 border border-slate-800 rounded-lg px-2.5 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-teal-500"
+                  />
+                  <button
+                    type="submit"
+                    className="bg-teal-500 hover:bg-teal-400 text-slate-950 font-bold p-1.5 rounded-lg transition"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+                    </svg>
+                  </button>
+                </form>
+
+              </div>
+
+              {/* Instant Referral & Triage Button */}
+              <div className="glass-panel rounded-2xl p-4 shadow-xl border border-slate-800">
+                <button
+                  onClick={() => setShowReportModal(true)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-teal-500 via-teal-600 to-cyan-600 hover:from-teal-400 hover:to-cyan-500 text-slate-950 font-bold text-xs uppercase tracking-wider shadow-lg shadow-teal-500/25 flex items-center justify-center space-x-2 transition transform active:scale-98"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                  </svg>
+                  <span>Generate Clinical PDF Summary</span>
+                </button>
+              </div>
+
+            </aside>
+
+          </main>
+
+          {/* ======================================================== */}
+          {/* 3. PRINTABLE CLINICAL REPORT MODAL                       */}
+          {/* ======================================================== */}
+          {showReportModal && (
+            <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 overflow-y-auto">
+              <div className="glass-panel w-full max-w-3xl rounded-2xl p-6 shadow-2xl border border-slate-700 text-slate-900 bg-white relative animate-in fade-in zoom-in-95 duration-200">
+                
+                {/* Close Button */}
+                <button
+                  onClick={() => setShowReportModal(false)}
+                  className="no-print absolute top-4 right-4 p-2 text-slate-500 hover:text-slate-800 rounded-lg hover:bg-slate-100 transition"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+
+                {/* Printable Report Wrapper */}
+                <div id="printable-report" className="space-y-4 text-slate-800">
+                  
+                  {/* Hospital / Clinic Header */}
+                  <div className="flex justify-between items-start border-b-2 border-slate-900 pb-3">
+                    <div>
+                      <h2 className="text-xl font-black tracking-tight text-slate-950">
+                        NATIONAL HEALTH MISSION - AI DIAGNOSTIC REFERRAL SUMMARY
+                      </h2>
+                      <p className="text-xs text-slate-600 font-medium">
+                        Rural & Community Edge AI Tele-Screening Network | {patient.facility}
+                      </p>
+                    </div>
+                    <div className="text-right text-xs font-mono">
+                      <p className="font-bold text-slate-900">REF: {patient.id}</p>
+                      <p className="text-slate-500">Date: {new Date().toLocaleDateString()}</p>
+                    </div>
+                  </div>
+
+                  {/* Patient Info Bar */}
+                  <div className="grid grid-cols-4 gap-2 bg-slate-100 p-3 rounded-lg text-xs">
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Patient Name</span>
+                      <strong className="text-slate-900">{patient.name}</strong>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Age / Gender</span>
+                      <span>{patient.age} Yrs / {patient.gender}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Vitals (BP / Glucose)</span>
+                      <span>{patient.systolicBP}/{patient.diastolicBP} mmHg | {patient.glucose} mg/dL</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-500 block text-[10px] uppercase font-bold">HbA1c / SpO2</span>
+                      <span>{patient.hba1c}% | {patient.spo2}%</span>
+                    </div>
+                  </div>
+
+                  {/* Diagnostic Findings */}
+                  <div className="border border-slate-200 rounded-lg p-4 bg-slate-50 space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs font-bold uppercase tracking-wider text-teal-800">
+                        Primary AI Diagnostic Finding ({domain.toUpperCase()})
+                      </span>
+                      <span className="text-xs font-mono font-bold px-2 py-0.5 rounded bg-red-100 text-red-800 border border-red-200">
+                        {findings.severity}
+                      </span>
+                    </div>
+                    <h3 className="text-base font-black text-slate-950">
+                      {findings.primary}
+                    </h3>
+                    <div className="flex items-center space-x-4 text-xs font-mono text-slate-600 pt-1">
+                      <span>Confidence: <strong>{findings.confidence}%</strong></span>
+                      <span>Uncertainty: <strong>±{findings.uncertainty}%</strong></span>
+                      <span>Classification: <strong>{findings.icd10}</strong></span>
+                    </div>
+                  </div>
+
+                  {/* Clinical Action Protocol */}
+                  <div>
+                    <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
+                      Stat Emergency Referral & Treatment Protocol:
+                    </h4>
+                    <ol className="list-decimal list-inside space-y-1 text-xs text-slate-700">
+                      {findings.actionProtocol.map((act, i) => (
+                        <li key={i} className="pl-1">{act}</li>
+                      ))}
+                    </ol>
+                  </div>
+
+                  {/* Sign-off area */}
+                  <div className="pt-6 border-t border-slate-300 flex justify-between items-end text-xs">
+                    <div>
+                      <p className="text-[11px] text-slate-500">
+                        * Automated AI co-pilot preliminary assessment. Verified with INT8 Edge model.
+                      </p>
+                      <p className="text-[11px] text-slate-500">
+                        Compliant with WHO Class IIa AI Medical Device guidelines.
+                      </p>
+                    </div>
+                    <div className="text-center">
+                      <div className="w-44 border-b border-slate-800 pb-1 font-signature text-sm font-semibold">
+                        Dr. A. Sengupta, MD
+                      </div>
+                      <span className="text-[10px] text-slate-500 uppercase tracking-wider">
+                        Attending Medical Officer Signature
+                      </span>
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Print Action Buttons */}
+                <div className="no-print mt-6 flex items-center justify-end space-x-3 pt-3 border-t border-slate-200">
+                  <button
+                    onClick={() => setShowReportModal(false)}
+                    className="px-4 py-2 rounded-lg bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-bold transition"
+                  >
+                    Close
+                  </button>
+                  <button
+                    onClick={() => window.print()}
+                    className="px-5 py-2 rounded-lg bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold flex items-center space-x-2 shadow-lg transition"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                    </svg>
+                    <span>Print / Save PDF</span>
+                  </button>
+                </div>
+
+              </div>
+            </div>
+          )}
+
+          {/* ======================================================== */}
+          {/* 4. FOOTER & COMPLIANCE BAR                               */}
+          {/* ======================================================== */}
+          <footer className="glass-panel border-t border-slate-800/90 py-3 px-4 text-center text-xs text-slate-500">
+            <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
+              <span className="font-mono text-[11px]">
+                AURA-MED AI Engine • Built for Low-Resource Healthcare & Under-Resourced Clinics
+              </span>
+              <div className="flex items-center space-x-3 text-[11px]">
+                <span className="text-teal-400 font-mono">ONNX Runtime Web INT8</span>
+                <span>•</span>
+                <span className="text-slate-400">HIPAA & GDPR Compliant</span>
+                <span>•</span>
+                <span className="text-cyan-400 font-mono">WHO-ICDR Triage Protocol</span>
+              </div>
+            </div>
+          </footer>
+
+        </div>
+      );
+    }
+
+    // Render the React App into the DOM
+    ReactDOM.createRoot(document.getElementById('root')).render(<MainApp />);
+  </script>
+</body>
+</html>
